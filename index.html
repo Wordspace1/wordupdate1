@@ -1,33 +1,657 @@
 <!DOCTYPE html>
 <html lang="id">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Countdown Real Time</title>
-  <link rel="stylesheet" href="style.css">
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Profil Nika123 - Simple</title>
+    <style>
+        :root {
+            --primary: #0095f6;
+            --success: #10b981;
+            --bg: #fafafa;
+            --white: #ffffff;
+            --text: #262626;
+            --gray: #8e8e8e;
+            --border: #dbdbdb;
+        }
+        
+        * { margin: 0; padding: 0; box-sizing: border-box; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; }
+        body { background-color: var(--bg); color: var(--text); padding-bottom: 80px; }
+
+        /* --- LOGIN SCREEN --- */
+        #login-screen {
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            background: linear-gradient(135deg, #0095f6, #00d2ff);
+            z-index: 2000; display: flex; justify-content: center; align-items: center;
+        }
+        .login-card {
+            background: white; padding: 30px; border-radius: 12px;
+            width: 300px; text-align: center; box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+        }
+        .login-card h2 { margin-bottom: 20px; color: var(--text); }
+        .input-box {
+            width: 100%; padding: 12px; margin-bottom: 10px; border: 1px solid var(--border);
+            border-radius: 5px; font-size: 14px;
+        }
+        .btn-login {
+            width: 100%; padding: 12px; background: var(--primary); color: white;
+            border: none; border-radius: 5px; font-weight: bold; cursor: pointer; font-size: 16px;
+        }
+
+        /* --- PROFILE APP --- */
+        #app-container { display: none; } /* Hidden until login */
+
+        .profile-header {
+            background: var(--white);
+            padding: 20px;
+            border-bottom: 1px solid var(--border);
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+        }
+
+        .profile-top { display: flex; align-items: center; gap: 20px; }
+        .avatar-container {
+            position: relative;
+            width: 80px; height: 80px;
+        }
+        .avatar {
+            width: 100%; height: 100%; border-radius: 50%;
+            border: 2px solid var(--border); object-fit: cover;
+        }
+        .verified-badge {
+            position: absolute; bottom: 0; right: 0;
+            background: var(--primary); color: white;
+            width: 24px; height: 24px; border-radius: 50%;
+            display: flex; align-items: center; justify-content: center;
+            border: 2px solid var(--white); font-size: 14px;
+        }
+
+        .btn-saldo {
+            background: #e0f2fe; color: #0284c7; border: 1px solid #bae6fd;
+            padding: 2px 10px; border-radius: 15px; font-size: 12px; font-weight: bold;
+            cursor: pointer; margin-top: 5px; display: inline-block; transition: 0.2s;
+        }
+        .btn-saldo:hover { background: #bae6fd; }
+
+        .stats-row { display: flex; justify-content: space-around; text-align: center; }
+        .stat-num { font-weight: bold; font-size: 18px; display: block; }
+        .stat-label { font-size: 12px; color: var(--gray); }
+
+        .bio-section h2 { font-size: 20px; font-weight: 300; }
+        .bio-section p { font-size: 14px; margin-top: 5px; white-space: pre-wrap; }
+
+        .btn-edit {
+            background: transparent; border: 1px solid var(--border);
+            padding: 5px 15px; border-radius: 4px; font-weight: 600; cursor: pointer;
+            width: 100%; margin-top: 10px; transition: 0.2s;
+        }
+        .btn-edit:hover { background: #f0f0f0; }
+
+        /* Tabs */
+        .tabs {
+            display: flex; background: var(--white); border-top: 1px solid var(--border);
+            border-bottom: 1px solid var(--border); position: sticky; top: 0; z-index: 10;
+        }
+        .tab {
+            flex: 1; text-align: center; padding: 12px; cursor: pointer;
+            font-size: 12px; letter-spacing: 1px; text-transform: uppercase; color: var(--gray);
+            border-bottom: 1px solid transparent;
+        }
+        .tab.active { color: var(--text); border-top: 1px solid var(--text); border-bottom: 1px solid transparent; }
+
+        /* Feed Grid */
+        .feed { display: flex; flex-wrap: wrap; padding: 3px; }
+        
+        .post-card {
+            width: 33.33%; padding: 3px; box-sizing: border-box;
+            position: relative; background: #000; cursor: pointer; aspect-ratio: 1/1;
+        }
+        .post-card video, .post-card img {
+            width: 100%; height: 100%; object-fit: cover;
+        }
+        .post-overlay {
+            position: absolute; top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(0,0,0,0.3); color: white; display: flex;
+            align-items: center; justify-content: center; opacity: 0; transition: opacity 0.2s;
+        }
+        .post-card:hover .post-overlay { opacity: 1; }
+
+        /* Modal Styles */
+        .modal {
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(0,0,0,0.6); z-index: 100; display: none;
+            justify-content: center; align-items: center;
+        }
+        .modal-content {
+            background: var(--white); width: 90%; max-width: 400px;
+            border-radius: 12px; overflow: hidden; box-shadow: 0 10px 25px rgba(0,0,0,0.2);
+        }
+        
+        /* Modal Headers */
+        .edit-header {
+            border-bottom: 1px solid var(--border); padding: 15px;
+            display: flex; justify-content: space-between; align-items: center;
+            font-weight: bold; text-align: center;
+        }
+        .edit-body { padding: 20px; text-align: center; }
+        
+        /* Form Elements */
+        .form-group { text-align: left; margin-bottom: 15px; }
+        .form-label { font-size: 12px; font-weight: bold; color: var(--gray); margin-bottom: 5px; display: block; }
+        .form-input {
+            width: 100%; padding: 10px; border: 1px solid var(--border);
+            border-radius: 4px; background: #fafafa; font-size: 14px; outline: none;
+        }
+        .form-input:focus { border-color: var(--text); }
+        
+        .btn-cancel { border: none; background: none; color: var(--text); cursor: pointer; font-weight: bold; }
+        .btn-save { border: none; background: none; color: var(--primary); cursor: pointer; font-weight: bold; }
+        
+        /* Saldo Specifics */
+        .saldo-card {
+            background: linear-gradient(135deg, #10b981, #059669);
+            color: white; padding: 20px; border-radius: 10px; margin-bottom: 20px; text-align: center;
+        }
+        .saldo-big { font-size: 24px; font-weight: bold; }
+        .btn-tarik {
+            width: 100%; background: var(--primary); color: white; border: none;
+            padding: 12px; border-radius: 5px; font-weight: bold; cursor: pointer; font-size: 14px;
+        }
+        .padding-text {
+            margin-top: 15px; color: var(--gray); font-style: italic; font-size: 13px;
+            display: none; 
+        }
+
+        /* QR Code Style */
+        #qr-container {
+            display: none; /* Hidden initially */
+            margin-top: 15px;
+            text-align: center;
+            background: #f0f0f0;
+            padding: 15px;
+            border-radius: 10px;
+            border: 2px dashed #ccc;
+        }
+        #qr-image {
+            width: 150px;
+            height: 150px;
+            display: block;
+            margin: 0 auto;
+        }
+
+        /* Floating Button */
+        .fab {
+            position: fixed; bottom: 30px; right: 30px;
+            width: 60px; height: 60px; background: var(--primary);
+            color: white; border-radius: 50%; display: flex;
+            align-items: center; justify-content: center; font-size: 30px;
+            box-shadow: 0 4px 10px rgba(0,0,0,0.3); cursor: pointer; z-index: 50;
+        }
+        
+        @media (min-width: 768px) {
+            .profile-header { flex-direction: row; align-items: flex-start; }
+            .profile-top { width: 30%; justify-content: center; flex-direction: column; text-align: center; }
+            .bio-section { width: 70%; }
+            .stats-row { justify-content: flex-start; gap: 40px; }
+        }
+    </style>
 </head>
 <body>
 
-<div class="bg"></div>
-
-<div class="container">
-  <div class="card">
-    <h1>⏳ Hitung Mundur</h1>
-    <p>Website sedang dipersiapkan</p>
-
-    <div class="timer">
-      <div class="prepare">
-  <span>✨ Siapkan momen kalian ✨</span>
-</div>
-
-      <div><span id="h">00</span><small>Jam</small></div>
-      <div><span id="m">00</span><small>Menit</small></div>
-      <div><span id="s">00</span><small>Detik</small></div>
+    <!-- 1. LOGIN SCREEN -->
+    <div id="login-screen">
+        <div class="login-card">
+            <h2>Login Akun</h2>
+            <input type="text" id="username" class="input-box" placeholder="Username (nika123)">
+            <input type="password" id="code" class="input-box" placeholder="Kode (333)">
+            <button class="btn-login" onclick="attemptLogin()">Masuk</button>
+            <p style="margin-top:10px; font-size:12px; color:#888;">Gunakan: nika123 / 333</p>
+        </div>
     </div>
-  </div>
-</div>
 
-<script src="script.js"></script>
+    <!-- 2. PROFILE APP (Hidden by default) -->
+    <div id="app-container">
+        
+        <div class="profile-header">
+            <div class="profile-top">
+                <div class="avatar-container">
+                    <img src="https://ui-avatars.com/api/?name=Nika+123&background=random&size=200" class="avatar" id="main-avatar">
+                    <div class="verified-badge">✓</div>
+                </div>
+                <div style="width: 100%;">
+                    <h3 style="font-weight: 300;">@nika123</h3>
+                    <!-- TOMBOL SALDO ANDA -->
+                    <button class="btn-saldo" onclick="openSaldoModal()">
+                        💰 Saldo Anda: Rp <span id="saldo-display">112.000</span>
+                    </button>
+                </div>
+            </div>
+
+            <div class="bio-section">
+                <div class="stats-row">
+                    <span><span class="stat-num" id="post-count">0</span> <span class="stat-label">Postingan</span></span>
+                    <span><span class="stat-num">100,000</span> <span class="stat-label">Pengikut</span></span>
+                    <span><span class="stat-num">0</span> <span class="stat-label">Mengikuti</span></span>
+                </div>
+                <div style="margin-top: 15px;">
+                    <h2 id="display-name">Nika Keren ✓</h2>
+                    <p id="display-bio">🌟 Simple | 100k Fam</p>
+                </div>
+                <button class="btn-edit" onclick="openEditModal()">Edit Profil</button>
+            </div>
+        </div>
+
+        <!-- Tabs -->
+        <div class="tabs">
+            <div class="tab active" onclick="switchTab('posts')"><i class="icon">📷</i> POSTINGAN</div>
+            <div class="tab" onclick="switchTab('saved')"><i class="icon">🔖</i> DISIMPAN</div>
+            <div class="tab" onclick="switchTab('tagged')"><i class="icon">🏷️</i> DITANDAI</div>
+        </div>
+
+        <!-- Feed Area -->
+        <div class="feed" id="feed-container">
+            <div style="width:100%; text-align:center; padding: 50px; color: #aaa;">
+                Belum ada postingan. Klik tombol + untuk post!
+            </div>
+        </div>
+
+        <!-- Floating Button to Post -->
+        <div class="fab" onclick="openUploadModal()">+</div>
+    </div>
+
+    <!-- 3. MODAL SALDO (FITUR TARIK DANA + QR CODE) -->
+    <div class="modal" id="saldo-modal">
+        <div class="modal-content">
+            <div class="edit-header">
+                <button class="btn-cancel" onclick="closeSaldoModal()">Batal</button>
+                <span>Penarikan Saldo</span>
+                <span></span>
+            </div>
+            <div class="edit-body">
+                <div class="saldo-card">
+                    <div style="font-size: 12px; opacity: 0.8;">Saldo Tersedia</div>
+                    <div class="saldo-big">Rp <span id="modal-saldo-display">112.000</span></div>
+                </div>
+
+                <div class="form-group">
+                    <label class="form-label">Jumlah Penarikan (Rp)</label>
+                    <input type="number" id="tarik-jumlah" class="form-input" placeholder="Contoh: 50000">
+                </div>
+
+                <div class="form-group">
+                    <label class="form-label">Nomor Dana</label>
+                    <input type="number" id="tarik-dana" class="form-input" placeholder="08xxx">
+                </div>
+
+                <div class="form-group">
+                    <label class="form-label">Nama Penerima</label>
+                    <input type="text" id="tarik-nama" class="form-input" placeholder="Nama Lengkap">
+                </div>
+
+                <button class="btn-tarik" id="btn-tarik-act" onclick="prosesTarik()">Tarik Sekarang</button>
+                
+                <!-- TULISAN PADDING -->
+                <div class="padding-text" id="padding-text">Padding... Sedang memproses ke server Dana...</div>
+                
+                <!-- CONTAINER QR CODE -->
+                <div id="qr-container">
+                    <p style="font-size:12px; color:#666; margin-bottom:5px;">Scan QR ini di Dana</p>
+                    <img id="qr-image" src="" alt="QR Code">
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 4. MODAL EDIT PROFIL -->
+    <div class="modal" id="edit-modal">
+        <div class="modal-content">
+            <div class="edit-header">
+                <button class="btn-cancel" onclick="closeEditModal()">Batal</button>
+                <span>Edit Profil</span>
+                <button class="btn-save" onclick="saveProfile()">Selesai</button>
+            </div>
+            <div class="edit-body">
+                <img src="" id="edit-avatar-preview" class="avatar" style="width:80px; height:80px; border-radius:50%; object-fit:cover; border:1px solid #ddd; margin-bottom:15px;">
+                <div style="margin-bottom: 15px;">
+                    <label for="edit-pp-file" style="color: var(--primary); font-weight: bold; cursor: pointer; font-size: 14px;">Ubah Foto Profil</label>
+                    <input type="file" id="edit-pp-file" accept="image/*" style="display: none;" onchange="previewPP(this)">
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Nama</label>
+                    <input type="text" id="edit-name-input" class="form-input" value="">
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Bio</label>
+                    <textarea id="edit-bio-input" class="form-input" rows="3" style="resize: none;"></textarea>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 5. MODAL UPLOAD POSTINGAN -->
+    <div class="modal" id="upload-modal">
+        <div class="modal-content">
+            <div class="edit-header">
+                <button class="btn-cancel" onclick="closeUploadModal()">Batal</button>
+                <span>Buat Postingan Baru</span>
+                <span></span>
+            </div>
+            <div class="upload-form" style="padding:20px; display:flex; flex-direction:column; gap:10px;">
+                <input type="text" id="caption-input" class="form-input" placeholder="Tulis caption...">
+                <label style="font-size:14px; font-weight:bold;">Pilih Media:</label>
+                <select id="type-select" class="form-input" onchange="toggleFileInput()">
+                    <option value="photo">📷 Foto</option>
+                    <option value="video">🎥 Video</option>
+                    <option value="voice">🎤 Suara (Audio)</option>
+                </select>
+                <input type="file" id="file-input" class="form-input" accept="image/*">
+                <button class="btn-tarik" onclick="uploadPost()">Posting Sekarang</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- 6. MODAL LIHAT POSTINGAN (POLOS TANPA LIKE & KOMEN) -->
+    <div class="modal" id="view-modal">
+        <div class="modal-content" style="max-width: 600px;">
+            <div class="edit-header">
+                <span>@nika123</span>
+                <button class="btn-cancel" onclick="document.getElementById('view-modal').style.display='none'">✕</button>
+            </div>
+            <div class="modal-body" id="view-media-container" style="padding:0;"></div>
+            <div style="padding: 15px;">
+                <!-- TIDAK ADA LIKE & KOMEN DISINI SESUAI REQUEST -->
+                <p><span style="font-weight: bold;">nika123</span> <span id="view-caption"></span></p>
+                <p style="color: gray; font-size: 12px; margin-top: 5px;">BARU SAJA</p>
+            </div>
+        </div>
+    </div>
+
+<script>
+    // --- DATA & STATE ---
+    let posts = [];
+    let saldo = 112000; // SALDO AWAL 112K
+    
+    // Format Angka
+    const formatNumber = (num) => new Intl.NumberFormat('id-ID').format(num);
+
+    // --- 1. LOGIN FUNCTION ---
+    function attemptLogin() {
+        const u = document.getElementById('username').value;
+        const c = document.getElementById('code').value;
+
+        if (u === 'nika123' && c === '333') {
+            document.getElementById('login-screen').style.display = 'none';
+            document.getElementById('app-container').style.display = 'block';
+            // Update tampilan saldo awal
+            updateSaldoDisplay();
+        } else {
+            alert("Username atau Kode salah! Coba lagi.");
+        }
+    }
+
+    function updateSaldoDisplay() {
+        document.getElementById('saldo-display').innerText = formatNumber(saldo);
+        document.getElementById('modal-saldo-display').innerText = formatNumber(saldo);
+    }
+
+    // --- 2. SALDO & TARIK DANA (DENGAN QR CODE) ---
+    function openSaldoModal() {
+        document.getElementById('saldo-modal').style.display = 'flex';
+        updateSaldoDisplay();
+        
+        // Reset UI
+        document.getElementById('tarik-jumlah').value = '';
+        document.getElementById('tarik-dana').value = '';
+        document.getElementById('tarik-nama').value = '';
+        document.getElementById('padding-text').style.display = 'none';
+        document.getElementById('qr-container').style.display = 'none';
+        document.getElementById('btn-tarik-act').style.display = 'block';
+    }
+
+    function closeSaldoModal() {
+        document.getElementById('saldo-modal').style.display = 'none';
+    }
+
+    function prosesTarik() {
+        const jumlahInput = document.getElementById('tarik-jumlah').value;
+        const dana = document.getElementById('tarik-dana').value;
+        const nama = document.getElementById('tarik-nama').value;
+
+        if (!jumlahInput || !dana || !nama) {
+            alert("Mohon isi semua data!");
+            return;
+        }
+
+        const jumlah = parseInt(jumlahInput);
+
+        // Validasi Saldo
+        if (jumlah > saldo) {
+            alert("Saldo Anda tidak mencukupi!");
+            return;
+        }
+
+        const btn = document.getElementById('btn-tarik-act');
+        const loadingText = document.getElementById('padding-text');
+        const qrContainer = document.getElementById('qr-container');
+        const qrImage = document.getElementById('qr-image');
+
+        // Langkah 1: Sembunyikan tombol, Muncul Padding
+        btn.style.display = 'none';
+        loadingText.style.display = 'block';
+
+        // Proses Padding (3 Detik)
+        setTimeout(() => {
+            loadingText.style.display = 'none';
+            
+            // Langkah 2: Tampilkan QR Code
+            qrContainer.style.display = 'block';
+            // Generate QR Code dummy untuk tampilan
+            qrImage.src = `https://api.qrserver.com/v1/create-qr-code/?size=150x150&data=TRANSFER-DANA-${jumlah}-${Date.now()}`;
+
+            // Proses Tampil QR (5 Detik)
+            setTimeout(() => {
+                // Langkah 3: Selesai
+                saldo -= jumlah;
+                updateSaldoDisplay();
+                
+                qrContainer.style.display = 'none';
+                btn.style.display = 'block';
+                
+                closeSaldoModal();
+                alert(`Berhasil!\nRp ${jumlah.toLocaleString()} telah dikirim ke ${nama}.`);
+            }, 5000); // 5 Detik QR Code muncul
+
+        }, 3000); // 3 Detik Padding
+    }
+
+    // --- 3. EDIT PROFIL FUNCTIONS ---
+    function openEditModal() {
+        const modal = document.getElementById('edit-modal');
+        const nameInput = document.getElementById('edit-name-input');
+        const bioInput = document.getElementById('edit-bio-input');
+        const previewImg = document.getElementById('edit-avatar-preview');
+        const currentAvatar = document.getElementById('main-avatar');
+
+        nameInput.value = document.getElementById('display-name').innerText;
+        bioInput.value = document.getElementById('display-bio').innerText;
+        previewImg.src = currentAvatar.src;
+
+        modal.style.display = 'flex';
+    }
+
+    function closeEditModal() {
+        document.getElementById('edit-modal').style.display = 'none';
+    }
+
+    function previewPP(input) {
+        if (input.files && input.files[0]) {
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                document.getElementById('edit-avatar-preview').src = e.target.result;
+            }
+            reader.readAsDataURL(input.files[0]);
+        }
+    }
+
+    function saveProfile() {
+        const newName = document.getElementById('edit-name-input').value;
+        const newBio = document.getElementById('edit-bio-input').value;
+        const newPreviewSrc = document.getElementById('edit-avatar-preview').src;
+
+        document.getElementById('display-name').innerText = newName;
+        document.getElementById('display-bio').innerText = newBio;
+        document.getElementById('main-avatar').src = newPreviewSrc;
+
+        closeEditModal();
+        alert("Profil berhasil diperbarui!");
+    }
+
+    // --- 4. POSTING FUNCTIONS (POLOS) ---
+    function toggleFileInput() {
+        const type = document.getElementById('type-select').value;
+        const fileInput = document.getElementById('file-input');
+        if (type === 'photo') fileInput.accept = "image/*";
+        else if (type === 'video') fileInput.accept = "video/*";
+        else if (type === 'voice') fileInput.accept = "audio/*";
+    }
+
+    function openUploadModal() {
+        document.getElementById('upload-modal').style.display = 'flex';
+    }
+
+    function closeUploadModal() {
+        document.getElementById('upload-modal').style.display = 'none';
+        document.getElementById('file-input').value = '';
+        document.getElementById('caption-input').value = '';
+    }
+
+    function uploadPost() {
+        const caption = document.getElementById('caption-input').value;
+        const type = document.getElementById('type-select').value;
+        const fileInput = document.getElementById('file-input');
+        
+        if (!fileInput.files[0]) {
+            alert("Pilih file dulu!");
+            return;
+        }
+
+        const file = fileInput.files[0];
+        const fileUrl = URL.createObjectURL(file);
+
+        // POSTINGAN POLOS TANPA LIKE & KOMEN
+        const newPost = {
+            id: Date.now(),
+            type: type, 
+            url: fileUrl, 
+            caption: caption || "Postingan baru!"
+        };
+
+        posts.unshift(newPost); 
+        renderFeed();
+        
+        document.getElementById('post-count').innerText = posts.length;
+        closeUploadModal();
+    }
+
+    function renderFeed() {
+        const container = document.getElementById('feed-container');
+        container.innerHTML = '';
+
+        if (posts.length === 0) {
+            container.innerHTML = `
+                <div style="width:100%; text-align:center; padding: 50px; color: #aaa;">
+                    <div style="font-size:50px; margin-bottom:10px;">📷</div>
+                    Belum ada postingan.
+                </div>`;
+            return;
+        }
+
+        posts.forEach(post => {
+            const div = document.createElement('div');
+            div.className = 'post-card';
+            
+            let contentHTML = '';
+            if (post.type === 'photo') {
+                contentHTML = `<img src="${post.url}" loading="lazy">`;
+            } else if (post.type === 'video') {
+                contentHTML = `<video src="${post.url}#t=0.1" preload="metadata" muted></video>`;
+            } else if (post.type === 'voice') {
+                div.style.backgroundColor = '#fff';
+                div.style.aspectRatio = 'auto';
+                div.style.height = '80px';
+                div.style.display = 'flex';
+                div.style.alignItems = 'center';
+                div.style.padding = '10px';
+                div.style.marginBottom = '3px';
+                
+                contentHTML = `
+                    <div style="width: 30px; height: 30px; background: var(--primary); border-radius: 50%; display: flex; align-items: center; justify-content: center; color: white;">🎤</div>
+                    <div style="flex:1; margin-left:10px;">
+                        <div style="font-weight:bold; font-size:14px;">Voice Note</div>
+                        <div style="font-size:12px; color:gray;">${post.caption}</div>
+                    </div>
+                    <audio src="${post.url}" controls style="height: 30px;"></audio>
+                `;
+            }
+
+            div.innerHTML = contentHTML;
+
+            if (post.type !== 'voice') {
+                const overlay = document.createElement('div');
+                overlay.className = 'post-overlay';
+                overlay.innerHTML = `<span style="font-size:24px;">👁️</span>`;
+                div.appendChild(overlay);
+            }
+
+            div.onclick = () => openViewModal(post);
+            container.appendChild(div);
+        });
+    }
+
+    function openViewModal(post) {
+        const modal = document.getElementById('view-modal');
+        const body = document.getElementById('view-media-container');
+        
+        modal.style.display = 'flex';
+        document.getElementById('view-caption').innerText = post.caption;
+        body.innerHTML = '';
+
+        if (post.type === 'photo') {
+            body.innerHTML = `<img src="${post.url}">`;
+        } else if (post.type === 'video') {
+            body.innerHTML = `<video src="${post.url}" controls autoplay playsinline></video>`;
+        } else if (post.type === 'voice') {
+            body.style.background = 'white';
+            body.innerHTML = `
+                <div style="width:100%; padding:20px; text-align:center;">
+                    <h3>🎤 Pesan Suara</h3>
+                    <div style="margin:20px 0;">
+                        <audio src="${post.url}" controls autoplay style="width:100%;"></audio>
+                    </div>
+                    <p>${post.caption}</p>
+                </div>
+            `;
+        }
+    }
+
+    window.onclick = function(event) {
+        if (event.target == document.getElementById('view-modal')) {
+            document.getElementById('view-modal').style.display = "none";
+            document.getElementById('view-modal').querySelector('video')?.pause();
+            document.getElementById('view-modal').querySelector('audio')?.pause();
+        }
+        if (event.target == document.getElementById('upload-modal')) closeUploadModal();
+        if (event.target == document.getElementById('edit-modal')) closeEditModal();
+        if (event.target == document.getElementById('saldo-modal')) closeSaldoModal();
+    }
+
+    function switchTab(tabName) {
+        const tabs = document.querySelectorAll('.tab');
+        tabs.forEach(t => t.classList.remove('active'));
+        event.currentTarget.classList.add('active');
+    }
+
+</script>
 </body>
 </html>
-
